@@ -1,0 +1,23 @@
+# depslib dependency file v1.0
+1534229071 source:c:\users\azmifauzan\dropbox\gawe\ktp-reader\bca\lenktpelkioslibusb\main.c
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<Windows.h>
+	<unistd.h>
+	<pthread.h>
+
+1534147635 source:c:\users\azmifauzan\dropbox\gawe\ktp-reader\bca\lenktpelkioslibusb\resource.rc
+	<windows.h>
+
+1543977594 source:c:\users\azmifauzan\dropbox\gawe\ktp-reader\bca\lenktpelkioslibusbthread\main.c
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<Windows.h>
+	<unistd.h>
+	<pthread.h>
+
+1547095327 source:c:\users\azmifauzan\dropbox\gawe\ktp-reader\bca\lenktpelkioslibusbthread\resource.rc
+	<windows.h>
+

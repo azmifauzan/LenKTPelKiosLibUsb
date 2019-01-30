@@ -1,0 +1,33 @@
+#include <windows.h>
+//LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+VS_VERSION_INFO    VERSIONINFO
+  FILEVERSION      4,2,181,235
+  FILEFLAGSMASK    0x3fL // VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        0x1L  // VS_FF_DEBUG|VS_FF_PRIVATEBUILD|VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0x0L  // final version
+#endif
+  FILEOS           VOS_NT_WINDOWS32
+  //FILETYPE         VFT_APP
+  //FILESUBTYPE      VFT2_UNKNOWN // not used
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
+    {
+      VALUE "CompanyName",      "PT. Len Industri (Persero)\0"
+      VALUE "Developer",        "Fauzan Azmi\0"
+      VALUE "FileDescription",  "Library for Communication with Len KTP-el Reader\0"
+      VALUE "FileVersion",      "4.2.181.235\0"
+      VALUE "LegalCopyright",   "Copyright (C) 2018 PT. Len Industri (Persero)\0"
+      VALUE "LegalTrademarks",  "All rights reserved.\0"
+      VALUE "ProductName",      "LenKTPelKiosLibUsb.dll\0"
+    } // BLOCK "040904E4"
+  } // BLOCK "StringFileInfo"
+  BLOCK "VarFileInfo"
+  {
+    VALUE "Translation", 0x409, 1252 // 1252 = 0x04E4
+  } // BLOCK "VarFileInfo"
+}
