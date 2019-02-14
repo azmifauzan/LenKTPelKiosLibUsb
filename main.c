@@ -708,7 +708,7 @@ int sendCommandOnly(char* command)
 
 void cAOReaderAgain(){
     char mylog[1024];
-    sprintf(mylog,"%%%Refresh Serial%%%Begin process");
+    sprintf(mylog,"+++Refresh Serial+++Begin process");
     tulisLog(mylog);
 
     br = FALSE;
@@ -716,39 +716,102 @@ void cAOReaderAgain(){
     FlushFileBuffers(hComm);
     Sleep(200);
 
-    sprintf(mylog,"%%%Refresh Serial%%%Close serial");
+    sprintf(mylog,"+++Refresh Serial+++Close serial");
     tulisLog(mylog);
 
     PurgeComm(hComm,PURGE_RXCLEAR|PURGE_TXCLEAR|PURGE_RXABORT|PURGE_TXABORT);
     CloseHandle(hComm);
     Sleep(200);
 
-    sprintf(mylog,"%%%Refresh Serial%%%Open serial");
+    sprintf(mylog,"+++Refresh Serial+++Open serial");
     tulisLog(mylog);
 
-    char port[6];
     int scport = searchreader();
-    sprintf(port,"COM%d",scport);
-    char* result = OpenOnly(port);
-    if(strcmp(result,"success") == 0){
-        nunggurespon = 0;
-        pthread_t tid;
-        pthread_create(&tid,NULL,threadRespon,NULL);
-        Sleep(200);
-        char command[100];
-        openstatus = 1;
-        sprintf(mylog,"%%%Refresh Serial%%%Open Success");
+    if(scport > 50){
+        //hasil = -1001;
+        //strcpy(error,"No Device Found");
+        sprintf(mylog,"+++Refresh Serial+++No Device Found");
         tulisLog(mylog);
     }
     else{
-        DWORD dwerr;
-        COMSTAT commstat;
-        ClearCommError(hComm,&dwerr,&commstat);
-        sprintf(mylog,"%%%Refresh Serial%%%Open serial failed, error number:",GetLastError());
-        tulisLog(mylog);
+        char port[6];
+        sprintf(port,"COM%d",scport);
+        char* result = sendCommandOP(port,"ektpopen#;");
+
+        char *split1 = strtok(result,"#");
+
+        if(strcmp(split1,"timeoutwrite") == 0)
+        {
+            //hasil = -1005;
+            //strcpy(error,"Send Data Timeout");
+            sprintf(mylog,"+++Refresh Serial+++Send Data Timeout");
+            tulisLog(mylog);
+        }
+        else if(strcmp(split1,"timeoutread") == 0)
+        {
+            //hasil = -1007;
+            //strcpy(error,"Receive Data Timeout");
+            sprintf(mylog,"+++Refresh Serial+++Receive Data Timeout");
+            tulisLog(mylog);
+        }
+        else if(strcmp(split1,"opendevicefailed") == 0)
+        {
+            //hasil = -1004;
+            //strcpy(error,"Setup Device Param Failed");
+            sprintf(mylog,"+++Refresh Serial+++Setup Device Param Failed");
+            tulisLog(mylog);
+        }
+        else if(strcmp(split1,"$open") == 0)
+        {
+            char *split2 = strtok(NULL,"#");
+            if(strcmp(split2,"0") == 0)
+            {
+                //hasil = 0;
+                //strcpy(error,"ERR_OK");
+                sprintf(mylog,"+++Refresh Serial+++Refress success");
+                tulisLog(mylog);
+
+                openstatus = 1;
+                nunggurespon = 0;
+                br = TRUE;
+                pthread_t tid;
+                pthread_create(&tid,NULL,threadRespon,NULL);
+            }
+            else {
+                //hasil = -1003;
+                //strcpy(error,"Open Device Failed");
+                sprintf(mylog,"+++Refresh Serial+++Open Device Failed");
+                tulisLog(mylog);
+            }
+            free(split2);
+        }
+        free(split1);
+        free(result);
     }
 
-    sprintf(mylog,"%%%Refresh Serial%%%End process");
+//    char port[6];
+//    int scport = searchreader();
+//    sprintf(port,"COM%d",scport);
+//    char* result = OpenOnly(port);
+//    if(strcmp(result,"success") == 0){
+//        nunggurespon = 0;
+//        pthread_t tid;
+//        pthread_create(&tid,NULL,threadRespon,NULL);
+//        Sleep(200);
+//        char command[100];
+//        openstatus = 1;
+//        sprintf(mylog,"+++Refresh Serial+++Open Success");
+//        tulisLog(mylog);
+//    }
+//    else{
+//        DWORD dwerr;
+//        COMSTAT commstat;
+//        ClearCommError(hComm,&dwerr,&commstat);
+//        sprintf(mylog,"+++Refresh Serial+++Open serial failed, error number:%d",GetLastError());
+//        tulisLog(mylog);
+//    }
+
+    sprintf(mylog,"+++Refresh Serial+++End process");
     tulisLog(mylog);
     Sleep(500);
 }
@@ -1485,6 +1548,7 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
             int tt = timeout * 10;
 
             while(resdemog == 0 && cnt < tt){
+                printf("nunggu respon cnt=%d, tt=%d\n",cnt,tt);
                 Sleep(100);
                 cnt++;
             }
