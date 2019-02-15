@@ -35,6 +35,8 @@ BOOL br = FALSE;
 char hasil2[1024];
 int kirimcmd = 0;
 int lastReaderStatus = 0, lastPutKtpStatus = 0, lastVerifyFingerStatus = 0, lastDeviceStatus = 0, portInUse = 0;
+char commandGlobal[100];
+int resultKirim = 0;
 
 
 char* sendCommandOP(char* port, char* command)
@@ -659,6 +661,85 @@ int searchreader()
     return portnumber;
 }
 
+void *sendCommandReceiveTr()
+{
+    char mylog[1024];
+    sprintf(mylog,"$$$send command$$$Begin Process");
+    tulisLog(mylog);
+
+    portInUse = 1;
+    PurgeComm(hComm,PURGE_TXCLEAR);
+    BOOL   Status;
+    int pjg = strlen(commandGlobal);
+    char lpBuffer[pjg+1];
+    strcpy(lpBuffer,commandGlobal);
+    DWORD  dNoOFBytestoWrite;
+    DWORD  dNoOfBytesWritten = 0;
+
+    dNoOFBytestoWrite = sizeof(lpBuffer);
+
+    sprintf(mylog,"send command:%s",commandGlobal);
+    tulisLog(mylog);
+
+    Status = WriteFile(hComm,               // Handle to the Serialport
+                       lpBuffer,            // Data to be written to the port
+                       dNoOFBytestoWrite,   // No of bytes to write into the port
+                       &dNoOfBytesWritten,  // No of bytes written to the port
+                       NULL);
+
+    if (Status == FALSE){
+        resultKirim = 99;
+    }
+    else{
+        resultKirim = 0;
+    }
+
+    free(lpBuffer);
+
+    Sleep(500);
+    //PurgeComm(hComm,PURGE_RXCLEAR);
+
+    char TempChar;
+    DWORD NoBytesRead;
+    int i = 0;
+    BOOL simpanData = FALSE;
+    char dataSebelum = '\0';
+    do
+    {
+        ReadFile(hComm, &TempChar, sizeof(TempChar), &NoBytesRead, NULL);
+
+        if(TempChar == '$'){
+            simpanData = TRUE;
+        }
+
+        if(simpanData){
+            isiBuffer[i] = TempChar;
+            i++;
+        }
+
+        if(TempChar == ';'){
+            if(dataSebelum != ';'){
+                simpanData = FALSE;
+                parsingIsi();
+                //nunggurespon = 1;
+            }
+            i = 0;
+        }
+
+        dataSebelum = TempChar;
+
+    }
+    while (nunggurespon == 0);
+    //portInUse = 0;
+}
+
+void sendCommandReceive(char* command)
+{
+    strcpy(commandGlobal,command);
+    pthread_t tid;
+    pthread_create(&tid,NULL,sendCommandReceiveTr,NULL);
+}
+
 int sendCommandOnly(char* command)
 {
 //    if(kirimcmd >= 50){
@@ -972,7 +1053,7 @@ void bacafile()
 __declspec(dllexport) int ektp_getDLL(char error[100], char dllVersion[100])
 {
     strcpy(error,"ERR_OK");
-    strcpy(dllVersion,"4.2.181.235");
+    strcpy(dllVersion,"4.2.190.215");
     return 0;
 }
 
@@ -1005,7 +1086,7 @@ __declspec(dllexport) int ektp_open(char error[100])
             sprintf(port,"COM%d",scport);
             char* result = sendCommandOP(port,"ektpopen#;");
 
-            char *split1 = strtok(result,"#");
+            char* split1 = strtok(result,"#");
 
             if(strcmp(split1,"timeoutwrite") == 0)
             {
@@ -1030,19 +1111,21 @@ __declspec(dllexport) int ektp_open(char error[100])
                     hasil = 0;
                     strcpy(error,"ERR_OK");
                     openstatus = 1;
-                    nunggurespon = 0;
-                    br = TRUE;
-                    pthread_t tid;
-                    pthread_create(&tid,NULL,threadRespon,NULL);
+                    //nunggurespon = 0;
+                    //br = TRUE;
+                    //pthread_t tid;
+                    //pthread_create(&tid,NULL,threadRespon,NULL);
                 }
                 else {
                     hasil = -1003;
                     strcpy(error,"Open Device Failed");
                 }
                 free(split2);
+                printf("4");
             }
-            free(split1);
-            free(result);
+
+            //free(split1);
+            //free(result);
         }
 
     sprintf(mylog,"###ektp_open###Return request call:%d,%s",hasil,error);
@@ -1061,9 +1144,19 @@ __declspec(dllexport) int ektp_close(char error[100])
     if(openstatus == 1)
     {
         br = TRUE;
-        int result = sendCommandOnly("ektpclose#;");
+        //int result = sendCommandOnly("ektpclose#;");
+        resultKirim = 88;
+        nunggurespon = 0;
+        sendCommandReceive("ektpclose#;");
+        int cnt2 = 0;
+        int tt2 = 20;
+        while(resultKirim == 88 && cnt2 < tt2){
+            Sleep(100);
+            cnt2++;
+        }
+
         int timeout = 2;
-        if(result == 0){
+        if(resultKirim == 0){
             br = FALSE;
             Sleep(500);
             int cnt = 0;
@@ -1073,6 +1166,7 @@ __declspec(dllexport) int ektp_close(char error[100])
                 Sleep(100);
                 cnt++;
             }
+            nunggurespon = 1;
 
             if(resclose == 0){
                 hasil = -1007;
@@ -1092,6 +1186,16 @@ __declspec(dllexport) int ektp_close(char error[100])
                 }
                 resclose = 0;
             }
+        }
+        else if(resultKirim == 88){
+            hasil = -1005;
+            strcpy(error,"Send Data Timeout");
+            cAOReaderAgain();
+        }
+        else{
+            hasil = -1006;
+            strcpy(error,"Send Data Failed");
+            cAOReaderAgain();
         }
     }
     else{
@@ -1119,21 +1223,28 @@ __declspec(dllexport) int ektp_info(char error[100], char hid[50], char sn[50], 
             Sleep(500);
         }
 
-        br = TRUE;
-        //fflush(stdin);
-        int result = sendCommandOnly("ektpinfo#;");
-        int timeout = 2;
-        if(result == 0){
+        resultKirim = 88;
+        nunggurespon = 0;
+        sendCommandReceive("ektpinfo#;");
+        int cnt2 = 0;
+        int tt2 = 20;
+        while(resultKirim == 88 && cnt2 < tt2){
+            Sleep(100);
+            cnt2++;
+        }
+
+        int timeout = 5;
+        if(resultKirim == 0){
             br = FALSE;
             Sleep(500);
             int cnt = 0;
             int tt = timeout * 10;
-
             while(resinfo == 0 && cnt < tt){
                 Sleep(100);
                 cnt++;
             }
-            //br = TRUE;
+            nunggurespon = 1;
+
             if(resinfo == 0){
                 hasil = -1007;
                 strcpy(error,"Receive Data Timeout");
@@ -1157,6 +1268,11 @@ __declspec(dllexport) int ektp_info(char error[100], char hid[50], char sn[50], 
                 //free(isiInfo);
                 memset(isiInfo,0,sizeof(isiInfo));
             }
+        }
+        else if(resultKirim == 88){
+            hasil = -1005;
+            strcpy(error,"Send Data Timeout");
+            cAOReaderAgain();
         }
         else{
             hasil = -1006;
@@ -1184,7 +1300,7 @@ __declspec(dllexport) int ektp_putKTP(char error[100], char dm[80], int timeout,
     tulisLog(mylog);
 
     int hasil = 0;
-    //cAOReaderAgain();
+
     if(openstatus == 1)
     {
         while(portInUse == 1){
@@ -1196,8 +1312,18 @@ __declspec(dllexport) int ektp_putKTP(char error[100], char dm[80], int timeout,
         char command[100];
         //fflush(stdin);
         sprintf(command,"ektpput#%d#%s#;",timeout,dm);
-        int result = sendCommandOnly(command);
-        if(result == 0){
+        //int result = sendCommandOnly(command);
+        resultKirim = 88;
+        nunggurespon = 0;
+        sendCommandReceive(command);
+        int cnt2 = 0;
+        int tt2 = 20;
+        while(resultKirim == 88 && cnt2 < tt2){
+            Sleep(100);
+            cnt2++;
+        }
+
+        if(resultKirim == 0){
             br = FALSE;
             Sleep(500);
             int cnt = 0;
@@ -1207,6 +1333,8 @@ __declspec(dllexport) int ektp_putKTP(char error[100], char dm[80], int timeout,
                 Sleep(100);
                 cnt++;
             }
+
+            nunggurespon = 1;
 
             if(resput == 0){
                 hasil = -1007;
@@ -1240,6 +1368,13 @@ __declspec(dllexport) int ektp_putKTP(char error[100], char dm[80], int timeout,
                 resput = 0;
                 //cAOReaderAgain();
             }
+        }
+        else if(resultKirim == 88){
+            hasil = -1005;
+            strcpy(error,"Send Data Timeout");
+            cAOReaderAgain();
+            lastPutKtpStatus = 24;
+            lastReaderStatus = 0;
         }
         else{
             hasil = -1006;
@@ -1288,13 +1423,23 @@ __declspec(dllexport) int ektp_poll(char error[100], unsigned char *readerStatus
             //free(isiPoll);
             //memset(isiPoll,0,sizeof(isiPoll));
             //FlushFileBuffers(hComm);
-            int result = sendCommandOnly("ektppoll#;");
+            //int result = sendCommandOnly("ektppoll#;");
+            resultKirim = 88;
+            nunggurespon = 0;
+            sendCommandReceive("ektppoll#;");
+            int cnt2 = 0;
+            int tt2 = 20;
+            while(resultKirim == 88 && cnt2 < tt2){
+                Sleep(100);
+                cnt2++;
+            }
+
             int timeout = 2;
             *readerStatus = '\0';
             *putKTPStatus = '\0';
             *verifyFingerStatus = '\0';
             *deviceStatus = '\0';
-            if(result == 0){
+            if(resultKirim == 0){
                 br = FALSE;
                 Sleep(500);
                 int cnt = 0;
@@ -1304,6 +1449,7 @@ __declspec(dllexport) int ektp_poll(char error[100], unsigned char *readerStatus
                     Sleep(100);
                     cnt++;
                 }
+                nunggurespon = 1;
 
                 //br = TRUE;
                 if(respoll == 0){
@@ -1342,6 +1488,11 @@ __declspec(dllexport) int ektp_poll(char error[100], unsigned char *readerStatus
                     memset(isiBuffer,0,sizeof(isiBuffer));
                 }
             }
+            else if(resultKirim == 88){
+                hasil = -1005;
+                strcpy(error,"Send Data Timeout");
+                cAOReaderAgain();
+            }
             else{
                 hasil = -1006;
                 strcpy(error,"Send Data Failed");
@@ -1379,9 +1530,19 @@ __declspec(dllexport) int ektp_reset(char error[100], char type[2])
         char command[100];
         //fflush(stdin);
         sprintf(command,"ektpreset#%s#;",type);
-        int result = sendCommandOnly(command);
+        //int result = sendCommandOnly(command);
+        resultKirim = 88;
+        nunggurespon = 0;
+        sendCommandReceive(command);
+        int cnt2 = 0;
+        int tt2 = 20;
+        while(resultKirim == 88 && cnt2 < tt2){
+            Sleep(100);
+            cnt2++;
+        }
+
         int timeout = 2;
-        if(result == 0){
+        if(resultKirim == 0){
             br = FALSE;
             Sleep(500);
             int cnt = 0;
@@ -1391,6 +1552,7 @@ __declspec(dllexport) int ektp_reset(char error[100], char type[2])
                 Sleep(100);
                 cnt++;
             }
+            nunggurespon = 1;
 
             if(resreset == 0){
                 hasil = -1007;
@@ -1414,6 +1576,11 @@ __declspec(dllexport) int ektp_reset(char error[100], char type[2])
                 //free(isiReset);
             }
         }
+        else if(resultKirim == 88){
+            hasil = -1005;
+            strcpy(error,"Send Data Timeout");
+            cAOReaderAgain();
+        }
         else{
             hasil = -1006;
             strcpy(error,"Send Data Failed");
@@ -1426,7 +1593,7 @@ __declspec(dllexport) int ektp_reset(char error[100], char type[2])
         strcpy(error,"Device Not Open");
     }
 
-    sprintf(mylog,"###ektp_poll###Return request call:%d,%s",hasil,error);
+    sprintf(mylog,"###ektp_reset###Return request call:%d,%s",hasil,error);
     tulisLog(mylog);
 
     return hasil;
@@ -1452,8 +1619,18 @@ __declspec(dllexport) int ektp_verifyFinger(char error[100], char dm[80], int ti
         char command[100];
         //fflush(stdin);
         sprintf(command,"ektpfinger#%d#%s#%s#%s#%s#;",timeout,ft,opid,opnik,dm);
-        int result = sendCommandOnly(command);
-        if(result == 0){
+        //int result = sendCommandOnly(command);
+        resultKirim = 88;
+        nunggurespon = 0;
+        sendCommandReceive(command);
+        int cnt2 = 0;
+        int tt2 = 20;
+        while(resultKirim == 88 && cnt2 < tt2){
+            Sleep(100);
+            cnt2++;
+        }
+
+        if(resultKirim == 0){
             br = FALSE;
             Sleep(500);
             int cnt = 0;
@@ -1463,6 +1640,7 @@ __declspec(dllexport) int ektp_verifyFinger(char error[100], char dm[80], int ti
                 Sleep(100);
                 cnt++;
             }
+            nunggurespon = 1;
 
             if(resfinger == 0){
                 hasil = -1007;
@@ -1500,6 +1678,13 @@ __declspec(dllexport) int ektp_verifyFinger(char error[100], char dm[80], int ti
                 //free(isiFinger);
                 //cAOReaderAgain();
             }
+        }
+        else if(resultKirim == 88){
+            hasil = -1005;
+            strcpy(error,"Send Data Timeout");
+            cAOReaderAgain();
+            lastVerifyFingerStatus = 24;
+            lastReaderStatus = 0;
         }
         else{
             hasil = -1006;
@@ -1539,19 +1724,30 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
         char command[100];
         //fflush(stdin);
         sprintf(command,"ektpdemog#%d#%s#%s#;",timeout,opid,opnik);
-        int result = sendCommandOnly(command);
+        //int result = sendCommandOnly(command);
+        resultKirim = 88;
+        nunggurespon = 0;
+        sendCommandReceive(command);
+        int cnt2 = 0;
+        int tt2 = 20;
+        while(resultKirim == 88 && cnt2 < tt2){
+            Sleep(100);
+            cnt2++;
+        }
+
         *ektpdata = '\0';
-        if(result == 0){
+        if(resultKirim == 0){
             br = FALSE;
             Sleep(500);
             int cnt = 0;
-            int tt = timeout * 10;
+            int tt = (timeout+2) * 10;
 
             while(resdemog == 0 && cnt < tt){
-                printf("nunggu respon cnt=%d, tt=%d\n",cnt,tt);
+                //printf("nunggu respon cnt=%d, tt=%d\n",cnt,tt);
                 Sleep(100);
                 cnt++;
             }
+            nunggurespon = 1;
 
             if(resdemog == 0){
                 hasil = -1007;
@@ -1642,6 +1838,13 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
                 //cAOReaderAgain();
             }
         }
+        else if(resultKirim == 88){
+            hasil = -1005;
+            strcpy(error,"Send Data Timeout");
+            cAOReaderAgain();
+            lastVerifyFingerStatus = 24;
+            lastReaderStatus = 0;
+        }
         else{
             hasil = -1006;
             strcpy(error,"Send Data Failed");
@@ -1678,10 +1881,20 @@ __declspec(dllexport) int ektp_getMachineLog(char error[100], char date[10], cha
         char command[100];
         //fflush(stdin);
         sprintf(command,"ektplog#%s#;",date);
-        int result = sendCommandOnly(command);
+        //int result = sendCommandOnly(command);
+        resultKirim = 88;
+        nunggurespon = 0;
+        sendCommandReceive(command);
+        int cnt2 = 0;
+        int tt2 = 20;
+        while(resultKirim == 88 && cnt2 < tt2){
+            Sleep(100);
+            cnt2++;
+        }
+
         int timeout = 30;
         *map = '\0';
-        if(result == 0){
+        if(resultKirim == 0){
             br = FALSE;
             Sleep(500);
             int cnt = 0;
@@ -1690,6 +1903,7 @@ __declspec(dllexport) int ektp_getMachineLog(char error[100], char date[10], cha
                 Sleep(100);
                 cnt++;
             }
+            nunggurespon = 1;
 
             if(reslog == 0){
                 hasil = -1007;
@@ -1725,6 +1939,13 @@ __declspec(dllexport) int ektp_getMachineLog(char error[100], char date[10], cha
                 free(split2);
             }
         }
+        else if(resultKirim == 88){
+            hasil = -1005;
+            strcpy(error,"Send Data Timeout");
+            cAOReaderAgain();
+            lastVerifyFingerStatus = 24;
+            lastReaderStatus = 0;
+        }
         else{
             hasil = -1006;
             strcpy(error,"Send Data Failed");
@@ -1746,57 +1967,17 @@ __declspec(dllexport) int ektp_getMachineLog(char error[100], char date[10], cha
 
 __declspec(dllexport) int ektp_dispMessage(char error[100], char dspMessage[50])
 {
+    char mylog[1024];
+    sprintf(mylog,"==============================\nReceive request call ektp_dispMessage");
+    tulisLog(mylog);
+
     int hasil = 0;
 
     if(openstatus == 1)
     {
-        while(portInUse == 1){
-            Sleep(500);
-        }
-
-        br = TRUE;
-        //fflush(stdin);
-        int result = sendCommandOnly("ektpdisplay#;");
-        int timeout = 2;
-        dspMessage = '\0';
-        if(result == 0){
-            br = FALSE;
-            Sleep(500);
-            int cnt = 0;
-            int tt = timeout * 10;
-
-            while(resdisplay == 0 && cnt < tt){
-                Sleep(100);
-                cnt++;
-            }
-
-            if(resdisplay == 0){
-                hasil = -1007;
-                strcpy(error,"Receive Data Timeout");
-            }
-            else{
-                char *split1 = strtok(isiDisplay,",");
-                char *split2 = strtok(NULL,",");
-                if(strcmp(split1,"error") == 0){
-                    hasil = -1;
-                    strcpy(error,split2);
-                }
-                else{
-                    strcpy(error,split1);
-                    hasil = 1;
-                }
-
-                resdisplay = 0;
-                free(split1);
-                free(split2);
-                //free(isiDisplay);
-            }
-        }
-        else{
-            hasil = -1006;
-            strcpy(error,"Send Data Failed");
-        }
-        portInUse = 0;
+        hasil = 1;
+        strcpy(error,"Device not supported");
+        Sleep(1000);
     }
     else{
         hasil = -1012;
@@ -1808,187 +1989,75 @@ __declspec(dllexport) int ektp_dispMessage(char error[100], char dspMessage[50])
 
 __declspec(dllexport) int ektp_switchMode(char error[100], int mode)
 {
+    char mylog[1024];
+    sprintf(mylog,"==============================\nReceive request call ektp_switchMode");
+    tulisLog(mylog);
+
     int hasil = 0;
 
     if(openstatus == 1)
     {
-        while(portInUse == 1){
-            Sleep(500);
-        }
-
-        br = TRUE;
-        //fflush(stdin);
-        int result = sendCommandOnly("ektpswitch#;");
-        int timeout = 2;
-        if(result == 0){
-            br = FALSE;
-            Sleep(500);
-            int cnt = 0;
-            int tt = timeout * 10;
-
-            while(resswitch == 0 && cnt < tt){
-                Sleep(100);
-                cnt++;
-            }
-
-            if(resswitch == 0){
-                hasil = -1007;
-                strcpy(error,"Receive Data Timeout");
-            }
-            else{
-                char *split1 = strtok(isiSwitch,",");
-                char *split2 = strtok(NULL,",");
-
-                if(strcmp(split1,"error") == 0){
-                    hasil = -1;
-                    strcpy(error,split2);
-                }
-                else{
-                    strcpy(error,split1);
-                    hasil = 1;
-                }
-
-                resswitch = 0;
-                //free(isiSwitch);
-                free(split1);
-                free(split2);
-            }
-        }
-        else{
-            hasil = -1006;
-            strcpy(error,"Send Data Failed");
-        }
-        portInUse = 0;
+        hasil = 1;
+        strcpy(error,"Device not supported");
+        Sleep(1000);
     }
     else{
         hasil = -1012;
         strcpy(error,"Device Not Open");
     }
+
+    sprintf(mylog,"Return request call ektp_switchMode\n=============================");
+    tulisLog(mylog);
 
     return hasil;
 }
 
 __declspec(dllexport) int ektp_setPowText(char error[100], char powText[256])
 {
+    char mylog[1024];
+    sprintf(mylog,"==============================\nReceive request call ektp_setPowText");
+    tulisLog(mylog);
+
     int hasil = 0;
 
     if(openstatus == 1)
     {
-        while(portInUse == 1){
-            Sleep(500);
-        }
-
-        br = TRUE;
-        //fflush(stdin);
-        int result = sendCommandOnly("ektpsetpow#;");
-        int timeout = 2;
-        powText = '\0';
-        if(result == 0){
-            br = FALSE;
-            Sleep(500);
-            int cnt = 0;
-            int tt = timeout * 10;
-
-            while(ressetpow == 0 && cnt < tt){
-                Sleep(100);
-                cnt++;
-            }
-
-            if(ressetpow == 0){
-                hasil = -1007;
-                strcpy(error,"Receive Data Timeout");
-            }
-            else{
-                char *split1 = strtok(isiSetpow,",");
-                char *split2 = strtok(NULL,",");
-
-                if(strcmp(split1,"error") == 0){
-                    hasil = -1;
-                    strcpy(error,split2);
-                }
-                else{
-                    strcpy(error,split1);
-                    hasil = 1;
-                }
-
-                ressetpow = 0;
-                //free(isiSetpow);
-                free(split1);
-                free(split2);
-            }
-        }
-        else{
-            hasil = -1006;
-            strcpy(error,"Send Data Failed");
-        }
-        portInUse = 0;
+        hasil = 1;
+        strcpy(error,"Device not supported");
+        Sleep(1000);
     }
     else{
         hasil = -1012;
         strcpy(error,"Device Not Open");
     }
+
+    sprintf(mylog,"Return request call ektp_setPowText\n=============================");
+    tulisLog(mylog);
 
     return hasil;
 }
 
 __declspec(dllexport) int ektp_resPowText(char error[100])
 {
+    char mylog[1024];
+    sprintf(mylog,"==============================\nReceive request call ektp_resPowText");
+    tulisLog(mylog);
+
     int hasil = 0;
 
     if(openstatus == 1)
     {
-        while(portInUse == 1){
-            Sleep(500);
-        }
-
-        br = TRUE;
-        //fflush(stdin);
-        int result = sendCommandOnly("ektprespow#;");
-        int timeout = 2;
-        if(result == 0){
-            br = FALSE;
-            Sleep(500);
-            int cnt = 0;
-            int tt = timeout * 10;
-
-            while(resrespow == 0 && cnt < tt){
-                Sleep(100);
-                cnt++;
-            }
-
-            if(resrespow == 0){
-                hasil = -1007;
-                strcpy(error,"Receive Data Timeout");
-            }
-            else{
-                char *split1 = strtok(isiRespow,",");
-                char *split2 = strtok(NULL,",");
-
-                if(strcmp(split1,"error") == 0){
-                    hasil = -1;
-                    strcpy(error,split2);
-                }
-                else{
-                    strcpy(error,split1);
-                    hasil = 1;
-                }
-
-                resrespow = 0;
-                //free(isiRespow);
-                free(split1);
-                free(split2);
-            }
-        }
-        else{
-            hasil = -1006;
-            strcpy(error,"Send Data Failed");
-        }
-        portInUse = 0;
+        hasil = 1;
+        strcpy(error,"Device not supported");
+        Sleep(1000);
     }
     else{
         hasil = -1012;
         strcpy(error,"Device Not Open");
     }
+
+    sprintf(mylog,"Return request call ektp_resPowText\n=============================");
+    tulisLog(mylog);
 
     return hasil;
 }
@@ -2010,10 +2079,20 @@ int updateFinish()
     br = TRUE;
     char command[100];
     sprintf(command,"ektpupdatefinish#qwerty#;");
-    int result = sendCommandOnly(command);
+    //int result = sendCommandOnly(command);
+    resultKirim = 88;
+    nunggurespon = 0;
+    sendCommandReceive(command);
+    int cnt2 = 0;
+    int tt2 = 20;
+    while(resultKirim == 88 && cnt2 < tt2){
+        Sleep(100);
+        cnt2++;
+    }
+
     int timeout = 2;
     int x = -1;
-    if(result == 0){
+    if(resultKirim == 0){
         br = FALSE;
         Sleep(500);
         int cnt = 0;
@@ -2023,6 +2102,7 @@ int updateFinish()
             Sleep(100);
             cnt++;
         }
+        nunggurespon = 1;
 
         if(resupdatefinish == 0){
             x = -1;
@@ -2052,10 +2132,20 @@ void kirimFile(int fileLen, char* buffer)
     //int arr = (fileLen*2)+100;
     char command[20000];
     sprintf(command,"ektpupdatefile#%d#%d#%d#%s#;",fileLen,0,fileLen,buffer);
-    int result = sendCommandOnly(command);
+    //int result = sendCommandOnly(command);
+    resultKirim = 88;
+    nunggurespon = 0;
+    sendCommandReceive(command);
+    int cnt2 = 0;
+    int tt2 = 20;
+    while(resultKirim == 88 && cnt2 < tt2){
+        Sleep(100);
+        cnt2++;
+    }
+
     free(buffer);
     int timeout = 2;
-    if(result == 0){
+    if(resultKirim == 0){
         br = FALSE;
         Sleep(500);
         int cnt = 0;
@@ -2065,6 +2155,7 @@ void kirimFile(int fileLen, char* buffer)
             Sleep(100);
             cnt++;
         }
+        nunggurespon = 1;
 
         if(resupdatefile == 0){
             x = -1;
@@ -2202,9 +2293,19 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
         char command[100];
         fflush(stdin);
         sprintf(command,"ektpupdateinit#%d#%s#;",fileLen,dt);
-        int result = sendCommandOnly(command);
+        //int result = sendCommandOnly(command);
+        resultKirim = 88;
+        nunggurespon = 0;
+        sendCommandReceive(command);
+        int cnt2 = 0;
+        int tt2 = 20;
+        while(resultKirim == 88 && cnt2 < tt2){
+            Sleep(100);
+            cnt2++;
+        }
+
         int timeout = 2;
-        if(result == 0){
+        if(resultKirim == 0){
             br = FALSE;
             Sleep(500);
             int cnt = 0;
@@ -2214,6 +2315,7 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
                 Sleep(100);
                 cnt++;
             }
+            nunggurespon = 1;
 
             if(resupdateinit == 0){
                 hasil = -1007;
@@ -2255,6 +2357,16 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
 
                 resupdateinit = 0;
             }
+        }
+        else if(resultKirim == 88){
+            hasil = -1005;
+            strcpy(error,"Send Data Timeout");
+            cAOReaderAgain();
+        }
+        else{
+            hasil = -1006;
+            strcpy(error,"Send Data Failed");
+            cAOReaderAgain();
         }
     }
     else{

@@ -2,7 +2,7 @@
 //LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO    VERSIONINFO
-  FILEVERSION      4,2,190,214
+  FILEVERSION      4,2,190,215
   FILEFLAGSMASK    0x3fL // VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
   FILEFLAGS        0x1L  // VS_FF_DEBUG|VS_FF_PRIVATEBUILD|VS_FF_PRERELEASE
@@ -20,7 +20,7 @@ VS_VERSION_INFO    VERSIONINFO
       VALUE "CompanyName",      "PT. Len Industri (Persero)\0"
       VALUE "Developer",        "Fauzan Azmi\0"
       VALUE "FileDescription",  "Library for Communication with Len KTP-el Reader\0"
-      VALUE "FileVersion",      "4.2.190.214\0"
+      VALUE "FileVersion",      "4.2.190.215\0"
       VALUE "LegalCopyright",   "Copyright (C) 2018 PT. Len Industri (Persero)\0"
       VALUE "LegalTrademarks",  "All rights reserved.\0"
       VALUE "ProductName",      "LenKTPelKiosLibUsb.dll\0"
