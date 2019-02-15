@@ -37,6 +37,7 @@ int kirimcmd = 0;
 int lastReaderStatus = 0, lastPutKtpStatus = 0, lastVerifyFingerStatus = 0, lastDeviceStatus = 0, portInUse = 0;
 char commandGlobal[100];
 int resultKirim = 0;
+pthread_t tid1,tid2;
 
 
 char* sendCommandOP(char* port, char* command)
@@ -664,7 +665,7 @@ int searchreader()
 void *sendCommandReceiveTr()
 {
     char mylog[1024];
-    sprintf(mylog,"$$$send command$$$Begin Process");
+    sprintf(mylog,"$$$send command receive$$$Begin Process");
     tulisLog(mylog);
 
     portInUse = 1;
@@ -678,7 +679,7 @@ void *sendCommandReceiveTr()
 
     dNoOFBytestoWrite = sizeof(lpBuffer);
 
-    sprintf(mylog,"send command:%s",commandGlobal);
+    sprintf(mylog,"$$$send command receive$$$send command:%s",commandGlobal);
     tulisLog(mylog);
 
     Status = WriteFile(hComm,               // Handle to the Serialport
@@ -704,6 +705,8 @@ void *sendCommandReceiveTr()
     int i = 0;
     BOOL simpanData = FALSE;
     char dataSebelum = '\0';
+    sprintf(mylog,"$$$send command receive$$$begin receive");
+    tulisLog(mylog);
     do
     {
         ReadFile(hComm, &TempChar, sizeof(TempChar), &NoBytesRead, NULL);
@@ -731,13 +734,16 @@ void *sendCommandReceiveTr()
     }
     while (nunggurespon == 0);
     //portInUse = 0;
+    sprintf(mylog,"$$$send command receive$$$End Process");
+    tulisLog(mylog);
 }
 
 void sendCommandReceive(char* command)
 {
+    pthread_cancel(tid1);
+    pthread_cancel(tid2);
     strcpy(commandGlobal,command);
-    pthread_t tid;
-    pthread_create(&tid,NULL,sendCommandReceiveTr,NULL);
+    pthread_create(&tid1,NULL,sendCommandReceiveTr,NULL);
 }
 
 int sendCommandOnly(char* command)
@@ -787,7 +793,7 @@ int sendCommandOnly(char* command)
     return 0;
 }
 
-void cAOReaderAgain(){
+void *cAOReaderAgainTr(){
     char mylog[1024];
     sprintf(mylog,"+++Refresh Serial+++Begin process");
     tulisLog(mylog);
@@ -895,6 +901,12 @@ void cAOReaderAgain(){
     sprintf(mylog,"+++Refresh Serial+++End process");
     tulisLog(mylog);
     Sleep(500);
+}
+
+void cAOReaderAgain(){
+    pthread_cancel(tid1);
+    pthread_cancel(tid2);
+    pthread_create(&tid2,NULL,cAOReaderAgainTr,NULL);
 }
 
 char* sendAndRec(char* command)
@@ -1053,7 +1065,7 @@ void bacafile()
 __declspec(dllexport) int ektp_getDLL(char error[100], char dllVersion[100])
 {
     strcpy(error,"ERR_OK");
-    strcpy(dllVersion,"4.2.190.215");
+    strcpy(dllVersion,"4.2.190.216");
     return 0;
 }
 
