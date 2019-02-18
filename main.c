@@ -459,9 +459,9 @@ char* sendCommandSR(char* port, char* command, int timeout)
 void parsingIsi()
 {
     //printf("\nisi buffer:%s\n",isiBuffer);
-    char mylog[10240];
-//    sprintf(mylog,"receive buffer:%s",isiBuffer);
-//    tulisLog(mylog);
+    char mylog[102400];
+    //sprintf(mylog,"receive buffer:%s",isiBuffer);
+    //tulisLog(mylog);
     //PurgeComm(hComm,PURGE_RXCLEAR|PURGE_TXCLEAR);
     //portInUse = 0;
 
@@ -810,7 +810,7 @@ char* sendAndRec(char* command)
     return hasil3;
 }
 
-void tulisLog(char tulis[10240])
+void tulisLog(char tulis[102400])
 {
     char folde[FILENAME_MAX];
     _getcwd(folde,FILENAME_MAX);
@@ -1192,7 +1192,7 @@ __declspec(dllexport) int ektp_putKTP(char error[100], char dm[80], int timeout,
         strcpy(error,"Device Not Open");
     }
 
-    sprintf(mylog,"###ektp_putKTP###Return request call:%d,%s",hasil,error);
+    sprintf(mylog,"###ektp_putKTP###Return request call:%d,%s,%s",hasil,error,ft);
     tulisLog(mylog);
 
     return hasil;
@@ -1590,7 +1590,7 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
         strcpy(error,"Device Not Open");
     }
 
-    sprintf(mylog,"###ektp_getDataDemography###Return request call:%d,%s",hasil,error);
+    sprintf(mylog,"###ektp_getDataDemography###Return request call:%d,%s,%s",hasil,error,isiDemog);
     tulisLog(mylog);
 
     return hasil;
@@ -1603,6 +1603,7 @@ __declspec(dllexport) int ektp_getMachineLog(char error[100], char date[10], cha
     tulisLog(mylog);
 
     int hasil = 0;
+    char isiLog2[102400];
 
     if(openstatus == 1)
     {
@@ -1617,6 +1618,7 @@ __declspec(dllexport) int ektp_getMachineLog(char error[100], char date[10], cha
         int result = sendCommandOnly(command);
         int timeout = 30;
         *map = '\0';
+
         if(result == 0){
             br = FALSE;
             Sleep(500);
@@ -1636,7 +1638,6 @@ __declspec(dllexport) int ektp_getMachineLog(char error[100], char date[10], cha
                 //int cc = 0;
                 //char **arrr = NULL;
                 //cc = split(isiLog, ',', &arrr);
-                char isiLog2[102400];
                 strcpy(isiLog2,isiLog);
                 //printf("isi log:%s",isiLog);
                 //printf("isi log2:%s",isiLog2);
