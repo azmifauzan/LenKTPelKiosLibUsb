@@ -15,7 +15,7 @@
 				<Option createStaticLib="1" />
 				<Compiler>
 					<Add option="-Wall" />
-					<Add option="-g" />
+					<Add option="-std=c99" />
 					<Add option="-DBUILD_DLL" />
 				</Compiler>
 				<Linker>
@@ -32,6 +32,7 @@
 				<Compiler>
 					<Add option="-O2" />
 					<Add option="-Wall" />
+					<Add option="-std=c99" />
 					<Add option="-DBUILD_DLL" />
 				</Compiler>
 				<Linker>
@@ -40,6 +41,7 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-std=c++11" />
 			<Add option="-g" />
 		</Compiler>
 		<Unit filename="main.c">

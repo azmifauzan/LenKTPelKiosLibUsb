@@ -693,7 +693,7 @@ int sendCommandOnly(char* command)
 //        kirimcmd = 0;
 //    }
 
-    char mylog[1024];
+    char mylog[10240];
     sprintf(mylog,"$$$send command$$$Begin Process");
     tulisLog(mylog);
 
@@ -2057,7 +2057,9 @@ int kirimFile2(int fileLen, char* buffer)
     char dt1[4100];
     int lenbaru = jum/2;
     int i,awal=0,z;
+    printf("\nUpdating");
     for(i=0; i<divlen; i++){
+        printf(".");
         awal=i*jumdata;
         //free(dt1);
         for(z=0; z<jumdata; z++){
@@ -2088,13 +2090,19 @@ int kirimFile2(int fileLen, char* buffer)
     return updateFinish();
 }
 
-
 __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
 {
+    char mylog[10240];
+    sprintf(mylog,"###ektp_update###Receive request call");
+    tulisLog(mylog);
+
     int hasil = -1;
+    strcpy(error,"ERR_OK");
+
     FILE *file;
 	char *buffer;
-	unsigned long fileLen;
+	char *hasils;
+	long fileLen=0;
 
 	//Open file
 	file = fopen(updateApp, "rb");
@@ -2105,13 +2113,10 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
 		return hasil;
 	}
 
-	//Get file length
 	fseek(file, 0, SEEK_END);
 	fileLen=ftell(file);
 	fseek(file, 0, SEEK_SET);
-	//printf("Panjang file:%d\n",fileLen);
 
-	//Allocate memory
 	buffer=(char *)malloc(fileLen+1);
 	if (!buffer)
 	{
@@ -2127,8 +2132,12 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
 	fclose(file);
 
 	//Rubah byte ke hexa string
+	//printf("filelen:%ld\n",fileLen);
+	long xx = ((fileLen-1) * 2)-1;
+	//printf("xx:%ld\n",xx);
 	int i;
-    char hasils[((fileLen-1) * 2)-1];
+	//define xx=2024000;
+	hasils=(char *)malloc(xx);
     char hex_char[16] = "0123456789abcdef";
 
     for (i = 0; i < fileLen; ++i)
@@ -2141,25 +2150,32 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
     //printf("setelah convert\nHasil convert:%s",hasils);
     free(buffer);
 
-    int hasilkirim;
-
-    char dt[100];
+    char dt[101];
     int z;
     for(z=0; z<100; z++){
             //printf("%c,",buffer[awal+z]);
-            dt[z] = hasils[z];
-        }
-        dt[100]='\0';
+        dt[z] = hasils[z];
+    }
+    dt[100]='\0';
 
     if(openstatus == 1)
     {
+        int hasilkirim;
+
+        while(portInUse == 1){
+            Sleep(500);
+        }
+
         br = TRUE;
         char command[100];
-        fflush(stdin);
+        //fflush(stdin);
         sprintf(command,"ektpupdateinit#%d#%s#;",fileLen,dt);
+        //printf("\nk, command:%s\n",command);
         int result = sendCommandOnly(command);
+        //int result = sendCommandOnly("ektpinfo#;");
         int timeout = 2;
         if(result == 0){
+            //printf("1");
             br = FALSE;
             Sleep(500);
             int cnt = 0;
@@ -2175,7 +2191,6 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
                 strcpy(error,"Receive Data Timeout");
             }
             else{
-
                 if(strcmp(isiUpdateInit,"error") == 0){
                     hasil = -1;
                     strcpy(error,"ERR_ERROR");
@@ -2216,6 +2231,167 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
         hasil = -1012;
         strcpy(error,"Device Not Open");
     }
+
+    sprintf(mylog,"###ektp_info###Return request call:%d,%s",hasil,error);
+    tulisLog(mylog);
+
+    free(hasils);
+    return hasil;
+}
+
+
+__declspec(dllexport) int ektp_update2(char error[100], char *updateApp[256])
+{
+    char mylog[10240];
+    sprintf(mylog,"###ektp_update###Receive request call");
+    tulisLog(mylog);
+
+    int hasil = -1;
+    FILE *file;
+	char *buffer;
+	unsigned long fileLen;
+
+	printf("a");
+	//Open file
+	file = fopen(updateApp, "rb");
+	if (!file)
+	{
+		hasil = -1;
+        strcpy(error,"Unable to open file");
+		return hasil;
+	}
+	printf("b");
+
+	//Get file length
+	fseek(file, 0, SEEK_END);
+	fileLen=ftell(file);
+	fseek(file, 0, SEEK_SET);
+	//printf("Panjang file:%d\n",fileLen);
+
+	printf("c");
+	//Allocate memory
+	buffer=(char *)malloc(fileLen+1);
+	if (!buffer)
+	{
+		//fprintf(stderr, "Memory error!");
+        fclose(file);
+        hasil = -1;
+        strcpy(error,"Cannot alocate memory to update");
+		return hasil;
+	}
+	printf("d");
+
+	//Read file contents into buffer
+	fread(buffer, fileLen, 1, file);
+	fclose(file);
+
+	printf("e");
+
+	//Rubah byte ke hexa string
+	int i;
+    char hasils[10240000];
+    char hex_char[16] = "0123456789abcdef";
+
+    printf("f");
+
+    for (i = 0; i < fileLen; ++i)
+    {
+        // High nybble
+        hasils[i<<1] = hex_char[(buffer[i] >> 4) & 0x0f];
+        // Low nybble
+        hasils[(i<<1) + 1] = hex_char[buffer[i] & 0x0f];
+    }
+    //printf("setelah convert\nHasil convert:%s",hasils);
+    free(buffer);
+
+    printf("g");
+
+    int hasilkirim;
+
+    char dt[100];
+    int z;
+    for(z=0; z<100; z++){
+            //printf("%c,",buffer[awal+z]);
+        dt[z] = hasils[z];
+    }
+    dt[100]='\0';
+
+    printf("h");
+
+    if(openstatus == 1)
+    {
+        while(portInUse == 1){
+            Sleep(500);
+        }
+
+        br = TRUE;
+        char command[100];
+        //fflush(stdin);
+        sprintf(command,"ektpupdateinit#%d#%s#;",fileLen,dt);
+        //printf("\nk, command:%s\n",command);
+        int result = sendCommandOnly(command);
+        //int result = sendCommandOnly("ektpinfo#;");
+        int timeout = 2;
+        if(result == 0){
+            printf("1");
+            br = FALSE;
+            Sleep(500);
+            int cnt = 0;
+            int tt = timeout * 10;
+
+            while(resupdateinit == 0 && cnt < tt){
+                Sleep(100);
+                cnt++;
+            }
+
+            if(resupdateinit == 0){
+                hasil = -1007;
+                strcpy(error,"Receive Data Timeout");
+            }
+            else{
+                if(strcmp(isiUpdateInit,"error") == 0){
+                    hasil = -1;
+                    strcpy(error,"ERR_ERROR");
+                }
+                else if(strcmp(isiUpdateInit,"0") == 0){
+                    hasilkirim = kirimFile2(fileLen,hasils);
+                    if(hasilkirim == 0){
+                        hasil = hasilkirim;
+                        strcpy(error,"ERR_OK");
+                        nunggurespon = 1;
+                        CloseHandle(hComm);
+                        openstatus = 0;
+                    }
+                    else{
+                        hasil = hasilkirim;
+                        strcpy(error,"Cannot send update file");
+                    }
+                }
+                else if(strcmp(isiUpdateInit,"2") == 0){
+                    hasil = -1018;
+                    strcpy(error,"Invalid file update version");
+                }
+                else if(strcmp(isiUpdateInit,"3") == 0){
+                    hasil = -1017;
+                    strcpy(error,"Invalid file update type");
+                }
+                else{
+                    hasil = -1;
+                    strcpy(error,"Cannot update reader");
+                    //printf("isi:%s",isiUpdateInit);
+                }
+
+                resupdateinit = 0;
+            }
+        }
+    }
+    else{
+        hasil = -1012;
+        strcpy(error,"Device Not Open");
+    }
+
+    sprintf(mylog,"###ektp_info###Return request call:%d,%s",hasil,error);
+    tulisLog(mylog);
 
     return hasil;
 }

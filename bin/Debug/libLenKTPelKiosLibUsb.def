@@ -14,4 +14,5 @@ EXPORTS
     ektp_setPowText @13
     ektp_switchMode @14
     ektp_update @15
-    ektp_verifyFinger @16
+    ektp_update2 @16
+    ektp_verifyFinger @17
