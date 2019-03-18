@@ -10,7 +10,7 @@
 1534147635 source:c:\users\azmifauzan\dropbox\gawe\ktp-reader\bca\lenktpelkioslibusb\resource.rc
 	<windows.h>
 
-1550471601 source:c:\users\azmifauzan\dropbox\gawe\ktp-reader\bca\lenktpelkioslibusbthread\main.c
+1552879489 source:c:\users\azmifauzan\dropbox\gawe\ktp-reader\bca\lenktpelkioslibusbthread\main.c
 	<stdlib.h>
 	<stdio.h>
 	<string.h>
@@ -20,6 +20,6 @@
 	<time.h>
 	<direct.h>
 
-1550469457 source:c:\users\azmifauzan\dropbox\gawe\ktp-reader\bca\lenktpelkioslibusbthread\resource.rc
+1552877221 source:c:\users\azmifauzan\dropbox\gawe\ktp-reader\bca\lenktpelkioslibusbthread\resource.rc
 	<windows.h>
 

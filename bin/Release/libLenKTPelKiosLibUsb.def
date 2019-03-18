@@ -1,0 +1,18 @@
+EXPORTS
+    ektp_audi @1
+    ektp_close @2
+    ektp_dispMessage @3
+    ektp_getAPI @4
+    ektp_getDLL @5
+    ektp_getDataDemography @6
+    ektp_getMachineLog @7
+    ektp_info @8
+    ektp_open @9
+    ektp_poll @10
+    ektp_putKTP @11
+    ektp_resPowText @12
+    ektp_reset @13
+    ektp_setPowText @14
+    ektp_switchMode @15
+    ektp_update @16
+    ektp_verifyFinger @17

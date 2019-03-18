@@ -540,9 +540,6 @@ void parsingIsi()
             resupdatefinish = 1;
         }
 
-        free(hdr);
-        free(isi);
-        //free(isiBuffer);
         memset(isiBuffer,0,sizeof(isiBuffer));
 
         tulisLog(mylog);
@@ -843,11 +840,11 @@ char* sendAndRec(char* command)
     return hasil3;
 }
 
-void tulisLog(char tulis[102400])
+void tulisLog(char tulis[202400])
 {
     char folde[FILENAME_MAX];
     _getcwd(folde,FILENAME_MAX);
-    char pathfile[5000];
+    char pathfile[1024];
     sprintf(pathfile,"%s\\LenKTPelKiosLibUsb.log",folde);
 
     time_t t = time(NULL);
@@ -1012,10 +1009,10 @@ __declspec(dllexport) int ektp_open(char error[100])
                     hasil = -1003;
                     strcpy(error,"Open Device Failed");
                 }
-                free(split2);
+                //free(split2);
             }
-            free(split1);
-            free(result);
+            //free(split1);
+            //free(result);
         }
 
     sprintf(mylog,"###ektp_open###Return request call:%d,%s",hasil,error);
@@ -1125,7 +1122,7 @@ __declspec(dllexport) int ektp_info(char error[100], char hid[50], char sn[50], 
                     strcpy(fw,strtok(NULL,","));
                     strcpy(status,"01");
                 }
-                free(split1);
+                //free(split1);
                 resinfo = 0;
                 //free(isiInfo);
                 memset(isiInfo,0,sizeof(isiInfo));
@@ -1206,9 +1203,9 @@ __declspec(dllexport) int ektp_putKTP(char error[100], char dm[80], int timeout,
                     lastPutKtpStatus = 34;
                     lastReaderStatus = 0;
                 }
-                free(split1);
-                free(split2);
-                free(split3);
+                //free(split1);
+                //free(split2);
+                //free(split3);
                 memset(isiPut,0,sizeof(isiPut));
                 resput = 0;
                 //cAOReaderAgain();
@@ -1308,11 +1305,11 @@ __declspec(dllexport) int ektp_poll(char error[100], unsigned char *readerStatus
                         lastDeviceStatus = dvst;
                     }
 
-                    free(split1);
+                    //free(split1);
                     memset(isiPoll,0,sizeof(isiPoll));
                     respoll = 0;
                     //free(isiBuffer);
-                    memset(isiBuffer,0,sizeof(isiBuffer));
+                    //memset(isiBuffer,0,sizeof(isiBuffer));
                 }
             }
             else{
@@ -1469,7 +1466,7 @@ __declspec(dllexport) int ektp_verifyFinger(char error[100], char dm[80], int ti
                 }
 
                 resfinger = 0;
-                free(split1);
+                //free(split1);
                 //free(isiFinger);
                 //cAOReaderAgain();
             }
@@ -1584,41 +1581,7 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
                     }
                     p++;
                 }
-//                char isiDemog2[18096];
-//                printf("1");
-//                strcpy(isiDemog2,isiDemog);
-//                printf("2");
-//                char *split1 = strtok(isiDemog2,",");
-//                printf("3");
-//                if(strcmp(split1,"error") == 0){
-//                    hasil = -1;
-//                    //strcpy(error,arr[1]);
-//                    strcpy(error,strtok(NULL,","));
-//                }
-//                else{
-//                    printf("4");
-//                    strcpy(error,"ERR_OK");
-//                    printf("5");
-//                    //*ektpdata = isiDemog;
-//                    int i = 0;
-//                    while(isiDemog[i] != '\0'){
-//                        ektpdata[i] = isiDemog[i];
-//                        i++;
-//                    }
-//                    ektpdata[i] = '\0';
-//                    //ektpdata = isiDemog;
-//                    //printf("isi Demog: %s",isiDemog);
-//                    printf("6");
-//                }
-//                if(strcmp(arr[0],"error") == 0){
-//                    hasil = -1;
-//                    strcpy(error,arr[1]);
-//                }
-//                else{
-//                    strcpy(error,"ERR_OK");
-//                    //*ektpdata = isiDemog;
-//                    strcpy(ektpdata,isiDemog);
-//                }
+
                 if(strcmp(arr[0],"error")== 0){
                     hasil = -1;
                     strcpy(error,arr[1]);
@@ -1629,13 +1592,7 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
                     *ektpdata = isiDemog;
                 }
                 resdemog = 0;
-                //free(isiDemog);
-                //free(isiDemog2);
-                //free(arr);
-                free(p);
-                //free(t);
-                //free(temp);
-                //cAOReaderAgain();
+                //free(p);
             }
 
             sendCommandReceiveOp(FALSE);
@@ -1675,7 +1632,6 @@ __declspec(dllexport) int ektp_getMachineLog(char error[100], char date[10], cha
 
         br = TRUE;
         char command[100];
-        //fflush(stdin);
         sprintf(command,"ektplog#%s#;",date);
         int result = sendCommandOnly(command);
         int timeout = 30;
@@ -2264,43 +2220,134 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
     return hasil;
 }
 
-//__declspec(dllexport) int ektp_resetVar(char error[100])
+//__declspec(dllexport) int ektp_audi(char error[100], int timeout, char opid[20], char opnik[20], char auid[20], char aunik[20], char** ektpdata)
 //{
-//    free(isiBuffer);
-//    free(isiInfo);
-//    free(isiClose);
-//    free(isiPoll);
-//    free(isiPut);
-//    free(isiReset);
-//    free(isiPut);
-//    free(isiFinger);
-//    free(isiLog);
-//    free(isiDemog);
-//    free(isiSwitch);
-//    free(isiDisplay);
-//    free(isiSetpow);
-//    free(isiRespow);
-//    free(isiUpdateInit);
-//    free(isiUpdateFile);
-//    free(isiUpdateFinish);
-////    int tid = 1;
-////    int nunggurespon = 0, resput = 0, resinfo = 0, resclose = 0, respoll = 0, resreset = 0, resfinger = 0;
-////    int reslog = 0, resdemog = 0, resswitch = 0, resdisplay = 0, ressetpow = 0, resrespow = 0;
-////    int resupdateinit = 0, resupdatefile = 0, resupdatefinish = 0;
-////    int openstatus = 0;
-//    CloseHandle(hComm);
-//    //BOOL br = FALSE;
-//    return 0;
-//}
-
-//__declspec(dllexport) int ektp_pollTanpaRespon()
-//{
+//    char mylog[102400];
+//    sprintf(mylog,"###ektp_audi###Receive request call");
+//    tulisLog(mylog);
+//
+//    int hasil = 0;
+//    DWORD NoBytesRead = 0;
+//
 //    if(openstatus == 1)
 //    {
+//        while(portInUse == 1){
+//            Sleep(500);
+//        }
+//
 //        br = TRUE;
-//        int result = sendCommandOnly("ektppoll#;");
-//        //return 0;
+//        char command[100];
+//        //fflush(stdin);
+//        sprintf(command,"ektpaudi#;");
+//        int result = sendCommandOnly(command);
+//        *ektpdata = '\0';
+//        if(result == 0){
+//
+//            sendCommandReceiveOp(TRUE);
+//
+//            memset(isiBuffer, 0, sizeof(isiBuffer));
+//            if (!ReadFile(hComm, &isiBuffer, sizeof(isiBuffer), &NoBytesRead, NULL))
+//            {
+//                sprintf(mylog,"###ektp_audi###Failed to ReadFile() with error = %d", GetLastError());
+//                tulisLog(mylog);
+//            }
+//            else
+//                parsingIsi();
+//
+//            br = FALSE;
+//            Sleep(500);
+//            int cnt = 0;
+//            int tt = timeout * 10;
+//
+//            sprintf(mylog,"###ektp_audi###before timeout");
+//            tulisLog(mylog);
+//
+//            while(resdemog == 0 && cnt < tt){
+//                Sleep(100);
+//                cnt++;
+//            }
+//
+//            sprintf(mylog,"###ektp_audi###after timeout");
+//            tulisLog(mylog);
+//
+//            if(resdemog == 0){
+//                hasil = -1007;
+//                strcpy(error,"Receive Data Timeout");
+//
+//                char mylog2[202400] = {0, };
+//                sprintf(mylog2,"###ektp_audi### : Receive Data Timeout Occurred => [%s]", isiBuffer);
+//                tulisLog(mylog2);
+//
+//                cAOReaderAgain();
+//            }
+//            else{
+//                //int c = 0;
+//                //char **arr = NULL;
+//                //c = split(isiDemog, ',', &arr);
+//                printf("aman");
+//                char *p = isiDemog;
+//                int i=0;
+//                char arr[3][1024];
+//                int x=0;
+//                char temp[1024];
+//                char c = ',';
+//                //char *t;
+//                printf("1");
+//                while (*p != '\0')
+//                {
+//                    if (*p != c && *p != '\0')
+//                    {
+//                        temp[x] = *p;
+//                        x++;
+//                    }
+//                    else
+//                    {
+//                        temp[x] = '\0';
+//                        strcpy(arr[i],temp);
+//                        x=0;
+//                        i++;
+//                        if(i==2){
+//                            break;
+//                        }
+//                    }
+//                    p++;
+//                }
+//                printf("2");
+//
+//                if(strcmp(arr[0],"error")== 0){
+//                    printf("3");
+//                    hasil = -1;
+//                    strcpy(error,arr[1]);
+//                }
+//                else{
+//                    printf("4");
+//                    strcpy(error,"ERR_OK");
+//                    //strcpy(*ektpdata,isiDemog);
+//                    *ektpdata = isiDemog;
+//                }
+//                printf("5");
+//                resdemog = 0;
+//                //free(p);
+//                printf("6");
+//            }
+//            printf("7");
+//            sendCommandReceiveOp(FALSE);
+//            printf("8");
+//        }
+//        else{
+//            hasil = -1006;
+//            strcpy(error,"Send Data Failed");
+//            cAOReaderAgain();
+//        }
+//        portInUse = 0;
 //    }
+//    else{
+//        hasil = -1012;
+//        strcpy(error,"Device Not Open");
+//    }
+//
+//    sprintf(mylog,"###ektp_audi###Return request call:%d,%s,%s",hasil,error,isiDemog);
+//    tulisLog(mylog);
+//
+//    return hasil;
 //}
-
-
