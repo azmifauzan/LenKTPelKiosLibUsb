@@ -15,8 +15,8 @@
 				<Option createStaticLib="1" />
 				<Compiler>
 					<Add option="-Wall" />
-					<Add option="-DBUILD_DLL" />
 					<Add option="-g" />
+					<Add option="-DBUILD_DLL" />
 				</Compiler>
 				<Linker>
 					<Add library="user32" />
@@ -30,16 +30,18 @@
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
+					<Add option="-O2" />
 					<Add option="-Wall" />
 					<Add option="-DBUILD_DLL" />
-					<Add option="-O2" />
 				</Compiler>
 				<Linker>
-					<Add option="-s" />
 					<Add library="user32" />
 				</Linker>
 			</Target>
 		</Build>
+		<Compiler>
+			<Add option="-g" />
+		</Compiler>
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
