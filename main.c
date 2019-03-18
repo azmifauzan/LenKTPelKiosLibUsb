@@ -551,15 +551,28 @@ void parsingIsi()
 
 void *threadRespon(void *x)
 {
-    char TempChar;
+    char TempChar = '\0';
     DWORD NoBytesRead;
     int i = 0;
     BOOL simpanData = FALSE;
     char dataSebelum = '\0';
+    char mylog[100] = {0, };
+
+    sprintf(mylog , "threadRespon::start thread!!!!");
+    tulisLog(mylog);
+
+    nunggurespon = 0;
+
     do
     {
-        ReadFile(hComm, &TempChar, sizeof(TempChar), &NoBytesRead, NULL);
+        TempChar = '\0';
+        BOOL bRet = ReadFile(hComm, &TempChar, sizeof(TempChar), &NoBytesRead, NULL);
         //printf("c:%c ,",TempChar);
+        if (!bRet)
+        {
+            sprintf(mylog , "threadRespon::Failed ReadFile with error = %d!!!!", (int)GetLastError());
+            tulisLog(mylog);
+        }
 
         while(br == TRUE){Sleep(10);}
 
@@ -584,9 +597,26 @@ void *threadRespon(void *x)
 
         dataSebelum = TempChar;
 
+        Sleep(10);
     }
     while (nunggurespon == 0);
+
+    sprintf(mylog , "threadRespon::exit thread!!!!");
+    tulisLog(mylog);
     //printf("\n thread selesai.\n");
+}
+
+void sendCommandReceiveOp(BOOL bOnlyKill)
+{
+    br = FALSE;
+    nunggurespon = 1;
+    Sleep(500);
+
+    if (!bOnlyKill)
+    {
+        pthread_t tid;
+        pthread_create(&tid,NULL,threadRespon,NULL);
+    }
 }
 
 int searchreader()
@@ -732,8 +762,11 @@ void cAOReaderAgain(){
     char* result = OpenOnly(port);
     if(strcmp(result,"success") == 0){
         nunggurespon = 0;
-        pthread_t tid;
-        pthread_create(&tid,NULL,threadRespon,NULL);
+
+        sendCommandReceiveOp(FALSE);
+
+//        pthread_t tid;
+ //       pthread_create(&tid,NULL,threadRespon,NULL);
         Sleep(200);
         char command[100];
         openstatus = 1;
@@ -822,7 +855,7 @@ void tulisLog(char tulis[102400])
     FILE *fp;
     fp = fopen(pathfile, "a+");
     if (fp != NULL){
-        char mylog[10240];
+        char mylog[202400];
         sprintf(mylog,"%d/%d/%d %d:%d:%d - %s\n",tm.tm_mday,tm.tm_mon+1,tm.tm_year+1900,tm.tm_hour,tm.tm_min,tm.tm_sec,tulis);
         fputs(mylog, fp);
     }
@@ -909,7 +942,7 @@ void bacafile()
 __declspec(dllexport) int ektp_getDLL(char error[100], char dllVersion[100])
 {
     strcpy(error,"ERR_OK");
-    strcpy(dllVersion,"4.2.181.235");
+    strcpy(dllVersion,"99.2.181.235");
     return 0;
 }
 
@@ -969,8 +1002,11 @@ __declspec(dllexport) int ektp_open(char error[100])
                     openstatus = 1;
                     nunggurespon = 0;
                     br = TRUE;
-                    pthread_t tid;
-                    pthread_create(&tid,NULL,threadRespon,NULL);
+
+                    sendCommandReceiveOp(FALSE);
+
+ //                   pthread_t tid;
+ //                   pthread_create(&tid,NULL,threadRespon,NULL);
                 }
                 else {
                     hasil = -1003;
@@ -1465,6 +1501,7 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
     tulisLog(mylog);
 
     int hasil = 0;
+    DWORD NoBytesRead = 0;
 
     if(openstatus == 1)
     {
@@ -1479,19 +1516,42 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
         int result = sendCommandOnly(command);
         *ektpdata = '\0';
         if(result == 0){
+
+            sendCommandReceiveOp(TRUE);
+
+            memset(isiBuffer, 0, sizeof(isiBuffer));
+            if (!ReadFile(hComm, &isiBuffer, sizeof(isiBuffer), &NoBytesRead, NULL))
+            {
+                sprintf(mylog,"###ektp_getDataDemography###Failed to ReadFile() with error = %d", GetLastError());
+                tulisLog(mylog);
+            }
+            else
+                parsingIsi();
+
             br = FALSE;
             Sleep(500);
             int cnt = 0;
             int tt = timeout * 10;
+
+            sprintf(mylog,"###ektp_getDataDemography###before timeout");
+            tulisLog(mylog);
 
             while(resdemog == 0 && cnt < tt){
                 Sleep(100);
                 cnt++;
             }
 
+            sprintf(mylog,"###ektp_getDataDemography###after timeout");
+            tulisLog(mylog);
+
             if(resdemog == 0){
                 hasil = -1007;
                 strcpy(error,"Receive Data Timeout");
+
+                char mylog2[202400] = {0, };
+                sprintf(mylog2,"###ektp_getDataDemography### : Receive Data Timeout Occurred => [%s]", isiBuffer);
+                tulisLog(mylog2);
+
                 cAOReaderAgain();
             }
             else{
@@ -1577,6 +1637,8 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
                 //free(temp);
                 //cAOReaderAgain();
             }
+
+            sendCommandReceiveOp(FALSE);
         }
         else{
             hasil = -1006;
