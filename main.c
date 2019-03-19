@@ -939,7 +939,7 @@ void bacafile()
 __declspec(dllexport) int ektp_getDLL(char error[100], char dllVersion[100])
 {
     strcpy(error,"ERR_OK");
-    strcpy(dllVersion,"99.2.181.235");
+    strcpy(dllVersion,"99.2.181.237");
     return 0;
 }
 
@@ -2049,12 +2049,12 @@ int kirimFile2(int fileLen, char* buffer)
 {
     //int x = -1;
     br = TRUE;
-    char command[4100];
-    int jumdata = 2000;
+    char command[11000];
+    int jumdata = 5000;
     int jum = jumdata;
     int divlen = (fileLen*2) / jumdata;
     int modlen = (fileLen*2) % jumdata;
-    char dt1[4100];
+    char dt1[11000];
     int lenbaru = jum/2;
     int i,awal=0,z;
     printf("\nUpdating");
@@ -2072,7 +2072,7 @@ int kirimFile2(int fileLen, char* buffer)
         sendCommandOnly(command);
         fflush(stdin);
         fflush(stdout);
-        Sleep(15);
+        Sleep(25);
     }
 
     if(modlen > 0){
@@ -2201,6 +2201,11 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
                         hasil = hasilkirim;
                         strcpy(error,"ERR_OK");
                         nunggurespon = 1;
+                        Sleep(100);
+                        FlushFileBuffers(hComm);
+                        Sleep(200);
+                        PurgeComm(hComm,PURGE_RXCLEAR|PURGE_TXCLEAR|PURGE_RXABORT|PURGE_TXABORT);
+                        Sleep(200);
                         CloseHandle(hComm);
                         openstatus = 0;
                     }
@@ -2220,6 +2225,7 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
                 else{
                     hasil = -1;
                     strcpy(error,"Cannot update reader");
+                    cAOReaderAgain();
                     //printf("isi:%s",isiUpdateInit);
                 }
 
