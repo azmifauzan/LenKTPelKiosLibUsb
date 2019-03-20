@@ -847,16 +847,16 @@ void tulisLog(char tulis[202400])
     char pathfile[1024];
     sprintf(pathfile,"%s\\LenKTPelKiosLibUsb.log",folde);
 
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    FILE *fp;
-    fp = fopen(pathfile, "a+");
-    if (fp != NULL){
-        char mylog[202400];
-        sprintf(mylog,"%d/%d/%d %d:%d:%d - %s\n",tm.tm_mday,tm.tm_mon+1,tm.tm_year+1900,tm.tm_hour,tm.tm_min,tm.tm_sec,tulis);
-        fputs(mylog, fp);
-    }
-    fclose(fp);
+//    time_t t = time(NULL);
+//    struct tm tm = *localtime(&t);
+//    FILE *fp;
+//    fp = fopen(pathfile, "a+");
+//    if (fp != NULL){
+//        char mylog[202400];
+//        sprintf(mylog,"%d/%d/%d %d:%d:%d - %s\n",tm.tm_mday,tm.tm_mon+1,tm.tm_year+1900,tm.tm_hour,tm.tm_min,tm.tm_sec,tulis);
+//        fputs(mylog, fp);
+//    }
+//    fclose(fp);
 }
 
 void bacafile()
@@ -939,7 +939,7 @@ void bacafile()
 __declspec(dllexport) int ektp_getDLL(char error[100], char dllVersion[100])
 {
     strcpy(error,"ERR_OK");
-    strcpy(dllVersion,"99.2.181.237");
+    strcpy(dllVersion,"99.2.181.238");
     return 0;
 }
 
@@ -1013,6 +1013,7 @@ __declspec(dllexport) int ektp_open(char error[100])
             }
             //free(split1);
             //free(result);
+            portInUse = 0;
         }
 
     sprintf(mylog,"###ektp_open###Return request call:%d,%s",hasil,error);
@@ -1063,6 +1064,7 @@ __declspec(dllexport) int ektp_close(char error[100])
                 resclose = 0;
             }
         }
+        portInUse = 0;
     }
     else{
         hasil = -1012;
@@ -2049,12 +2051,12 @@ int kirimFile2(int fileLen, char* buffer)
 {
     //int x = -1;
     br = TRUE;
-    char command[11000];
-    int jumdata = 5000;
+    char command[4100];
+    int jumdata = 2000;
     int jum = jumdata;
     int divlen = (fileLen*2) / jumdata;
     int modlen = (fileLen*2) % jumdata;
-    char dt1[11000];
+    char dt1[4100];
     int lenbaru = jum/2;
     int i,awal=0,z;
     printf("\nUpdating");
@@ -2232,13 +2234,14 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
                 resupdateinit = 0;
             }
         }
+        portInUse = 0;
     }
     else{
         hasil = -1012;
         strcpy(error,"Device Not Open");
     }
 
-    sprintf(mylog,"###ektp_info###Return request call:%d,%s",hasil,error);
+    sprintf(mylog,"###ektp_update###Return request call:%d,%s",hasil,error);
     tulisLog(mylog);
 
     free(hasils);
