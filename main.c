@@ -812,21 +812,21 @@ char* sendAndRec(char* command)
 
 void tulisLog(char tulis[102400])
 {
-    char folde[FILENAME_MAX];
-    _getcwd(folde,FILENAME_MAX);
-    char pathfile[5000];
-    sprintf(pathfile,"%s\\LenKTPelKiosLibUsb.log",folde);
-
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    FILE *fp;
-    fp = fopen(pathfile, "a+");
-    if (fp != NULL){
-        char mylog[10240];
-        sprintf(mylog,"%d/%d/%d %d:%d:%d - %s\n",tm.tm_mday,tm.tm_mon+1,tm.tm_year+1900,tm.tm_hour,tm.tm_min,tm.tm_sec,tulis);
-        fputs(mylog, fp);
-    }
-    fclose(fp);
+//    char folde[FILENAME_MAX];
+//    _getcwd(folde,FILENAME_MAX);
+//    char pathfile[5000];
+//    sprintf(pathfile,"%s\\LenKTPelKiosLibUsb.log",folde);
+//
+//    time_t t = time(NULL);
+//    struct tm tm = *localtime(&t);
+//    FILE *fp;
+//    fp = fopen(pathfile, "a+");
+//    if (fp != NULL){
+//        char mylog[102400];
+//        sprintf(mylog,"%d/%d/%d %d:%d:%d - %s\n",tm.tm_mday,tm.tm_mon+1,tm.tm_year+1900,tm.tm_hour,tm.tm_min,tm.tm_sec,tulis);
+//        fputs(mylog, fp);
+//    }
+//    fclose(fp);
 }
 
 void bacafile()
@@ -909,7 +909,7 @@ void bacafile()
 __declspec(dllexport) int ektp_getDLL(char error[100], char dllVersion[100])
 {
     strcpy(error,"ERR_OK");
-    strcpy(dllVersion,"4.2.181.235");
+    strcpy(dllVersion,"4.2.181.240");
     return 0;
 }
 
@@ -976,10 +976,10 @@ __declspec(dllexport) int ektp_open(char error[100])
                     hasil = -1003;
                     strcpy(error,"Open Device Failed");
                 }
-                free(split2);
+                //free(split2);
             }
-            free(split1);
-            free(result);
+            //free(split1);
+            //free(result);
         }
 
     sprintf(mylog,"###ektp_open###Return request call:%d,%s",hasil,error);
@@ -1089,7 +1089,7 @@ __declspec(dllexport) int ektp_info(char error[100], char hid[50], char sn[50], 
                     strcpy(fw,strtok(NULL,","));
                     strcpy(status,"01");
                 }
-                free(split1);
+                //free(split1);
                 resinfo = 0;
                 //free(isiInfo);
                 memset(isiInfo,0,sizeof(isiInfo));
@@ -1170,9 +1170,9 @@ __declspec(dllexport) int ektp_putKTP(char error[100], char dm[80], int timeout,
                     lastPutKtpStatus = 34;
                     lastReaderStatus = 0;
                 }
-                free(split1);
-                free(split2);
-                free(split3);
+                //free(split1);
+                //free(split2);
+                //free(split3);
                 memset(isiPut,0,sizeof(isiPut));
                 resput = 0;
                 //cAOReaderAgain();
@@ -1298,7 +1298,7 @@ __declspec(dllexport) int ektp_poll(char error[100], unsigned char *readerStatus
     return hasil;
 }
 
-__declspec(dllexport) int ektp_reset(char error[100], char type[2])
+__declspec(dllexport) int ektp_reset(char error[100], char type)
 {
     char mylog[1024];
     sprintf(mylog,"###ektp_reset###Receive request call");
@@ -1315,7 +1315,7 @@ __declspec(dllexport) int ektp_reset(char error[100], char type[2])
         br = TRUE;
         char command[100];
         //fflush(stdin);
-        sprintf(command,"ektpreset#%s#;",type);
+        sprintf(command,"ektpreset#%c#;",type);
         int result = sendCommandOnly(command);
         int timeout = 2;
         if(result == 0){
@@ -1433,7 +1433,7 @@ __declspec(dllexport) int ektp_verifyFinger(char error[100], char dm[80], int ti
                 }
 
                 resfinger = 0;
-                free(split1);
+                //free(split1);
                 //free(isiFinger);
                 //cAOReaderAgain();
             }
@@ -1572,7 +1572,7 @@ __declspec(dllexport) int ektp_getDataDemography(char error[100], int timeout, c
                 //free(isiDemog);
                 //free(isiDemog2);
                 //free(arr);
-                free(p);
+                //free(p);
                 //free(t);
                 //free(temp);
                 //cAOReaderAgain();
@@ -1658,8 +1658,8 @@ __declspec(dllexport) int ektp_getMachineLog(char error[100], char date[10], cha
 
                 reslog = 0;
                 //free(isiLog2);
-                free(split1);
-                free(split2);
+                //free(split1);
+                //free(split2);
             }
         }
         else{
@@ -1724,8 +1724,8 @@ __declspec(dllexport) int ektp_dispMessage(char error[100], char dspMessage[50])
                 }
 
                 resdisplay = 0;
-                free(split1);
-                free(split2);
+                //free(split1);
+                //free(split2);
                 //free(isiDisplay);
             }
         }
@@ -1787,8 +1787,8 @@ __declspec(dllexport) int ektp_switchMode(char error[100], int mode)
 
                 resswitch = 0;
                 //free(isiSwitch);
-                free(split1);
-                free(split2);
+                //free(split1);
+                //free(split2);
             }
         }
         else{
@@ -1850,8 +1850,8 @@ __declspec(dllexport) int ektp_setPowText(char error[100], char powText[256])
 
                 ressetpow = 0;
                 //free(isiSetpow);
-                free(split1);
-                free(split2);
+                //free(split1);
+                //free(split2);
             }
         }
         else{
@@ -1912,8 +1912,8 @@ __declspec(dllexport) int ektp_resPowText(char error[100])
 
                 resrespow = 0;
                 //free(isiRespow);
-                free(split1);
-                free(split2);
+                //free(split1);
+                //free(split2);
             }
         }
         else{
@@ -2125,7 +2125,7 @@ __declspec(dllexport) int ektp_update(char error[100], char *updateApp[256])
 
     int hasilkirim;
 
-    char dt[100];
+    char dt[101];
     int z;
     for(z=0; z<100; z++){
             //printf("%c,",buffer[awal+z]);
