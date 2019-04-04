@@ -939,7 +939,7 @@ void bacafile()
 __declspec(dllexport) int ektp_getDLL(char error[100], char dllVersion[100])
 {
     strcpy(error,"ERR_OK");
-    strcpy(dllVersion,"99.2.181.238");
+    strcpy(dllVersion,"99.2.181.239");
     return 0;
 }
 
@@ -1333,7 +1333,7 @@ __declspec(dllexport) int ektp_poll(char error[100], unsigned char *readerStatus
     return hasil;
 }
 
-__declspec(dllexport) int ektp_reset(char error[100], char type[2])
+__declspec(dllexport) int ektp_reset(char error[100], char type)
 {
     char mylog[1024];
     sprintf(mylog,"###ektp_reset###Receive request call");
@@ -1350,7 +1350,7 @@ __declspec(dllexport) int ektp_reset(char error[100], char type[2])
         br = TRUE;
         char command[100];
         //fflush(stdin);
-        sprintf(command,"ektpreset#%s#;",type);
+        sprintf(command,"ektpreset#%c#;",type);
         int result = sendCommandOnly(command);
         int timeout = 2;
         if(result == 0){
